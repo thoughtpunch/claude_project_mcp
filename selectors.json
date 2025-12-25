@@ -1,0 +1,367 @@
+{
+  "_meta": {
+    "description": "All selectors for Claude.ai automation. Edit this file when UI changes.",
+    "lastValidated": "2024-12-25T00:00:00.000Z",
+    "tips": [
+      "Use data-testid when available (most stable)",
+      "Fallback to aria-label or role-based selectors",
+      "Use text selectors as last resort (locale-dependent)",
+      "Run 'npm run test-selectors' to validate all selectors"
+    ]
+  },
+
+  "navigation": {
+    "projectsLink": {
+      "description": "Link to navigate to Projects section in sidebar",
+      "strategies": [
+        "a[aria-label='Projects']",
+        "a[href='/projects']"
+      ]
+    },
+    "newChatLink": {
+      "description": "Link to start a new chat",
+      "strategies": [
+        "a[aria-label='New chat']",
+        "a[href='/new']"
+      ]
+    },
+    "sidebarToggle": {
+      "description": "Toggle to open/close sidebar",
+      "strategies": [
+        "[data-testid='pin-sidebar-toggle']",
+        "button[aria-label='Open sidebar']"
+      ]
+    },
+    "sidebar": {
+      "description": "The sidebar navigation",
+      "strategies": [
+        "nav[aria-label='Sidebar']"
+      ]
+    },
+    "allProjectsLink": {
+      "description": "Back link to all projects from project detail",
+      "strategies": [
+        "a:has-text('All projects')",
+        "[data-testid='page-header'] a"
+      ]
+    }
+  },
+
+  "projectList": {
+    "pageHeader": {
+      "description": "Projects page header",
+      "strategies": [
+        "[data-testid='page-header']",
+        "header:has-text('Projects')"
+      ]
+    },
+    "searchInput": {
+      "description": "Search projects input",
+      "strategies": [
+        "input[placeholder*='Search' i]"
+      ]
+    },
+    "createProjectButton": {
+      "description": "Button to create a new project",
+      "strategies": [
+        "button:has-text('New project')"
+      ]
+    },
+    "projectItem": {
+      "description": "Individual project card/link in the projects list",
+      "strategies": [
+        "a[href^='/project/']"
+      ]
+    },
+    "yourProjectsTab": {
+      "description": "Your projects tab/filter",
+      "strategies": [
+        "button:has-text('Your projects')"
+      ]
+    },
+    "archivedTab": {
+      "description": "Archived projects tab/filter",
+      "strategies": [
+        "button:has-text('Archived')"
+      ]
+    },
+    "sortButton": {
+      "description": "Sort projects dropdown",
+      "strategies": [
+        "button[aria-label='Sort projects']",
+        "button:has-text('Activity')"
+      ]
+    }
+  },
+
+  "projectDetail": {
+    "projectTitle": {
+      "description": "Project title/name on detail page",
+      "strategies": [
+        "h1",
+        "[data-testid='page-header'] h1"
+      ]
+    },
+    "projectDescription": {
+      "description": "Project description text",
+      "strategies": [
+        "h1 + p",
+        "[class*='description']"
+      ]
+    },
+    "starButton": {
+      "description": "Star/favorite project button",
+      "strategies": [
+        "button[aria-label='Star project']",
+        "button[aria-label='Unstar project']"
+      ]
+    },
+    "moreOptionsButton": {
+      "description": "More options menu button for project",
+      "strategies": [
+        "button[aria-label^='More options for']"
+      ]
+    },
+    "editInstructionsButton": {
+      "description": "Button to edit project instructions",
+      "strategies": [
+        "button[aria-label='Edit Instructions']",
+        "button:has-text('Instructions')"
+      ]
+    },
+    "instructionsSection": {
+      "description": "Instructions section container",
+      "strategies": [
+        "section:has-text('Instructions')",
+        "div:has-text('Add instructions')"
+      ]
+    },
+    "memorySection": {
+      "description": "Memory/context section",
+      "strategies": [
+        "section:has-text('Memory')",
+        "div:has-text('Memory')"
+      ]
+    }
+  },
+
+  "projectFiles": {
+    "filesSection": {
+      "description": "Files section container",
+      "strategies": [
+        "section:has-text('Files')",
+        "div:has-text('of project capacity')"
+      ]
+    },
+    "addFilesButton": {
+      "description": "Button to add files to project",
+      "strategies": [
+        "button[aria-label='Add files']",
+        "[data-testid='project-doc-uploader-dropdown-trigger']"
+      ]
+    },
+    "fileUploadInput": {
+      "description": "Hidden file input for project docs",
+      "strategies": [
+        "[data-testid='project-doc-upload']",
+        "input[type='file']"
+      ]
+    },
+    "fileThumbnail": {
+      "description": "Individual file card/thumbnail",
+      "strategies": [
+        "[data-testid='file-thumbnail']"
+      ]
+    },
+    "fileCheckbox": {
+      "description": "Checkbox to select a file",
+      "strategies": [
+        "[data-testid='file-thumbnail'] input[type='checkbox']",
+        "input[type='checkbox']"
+      ]
+    },
+    "capacityIndicator": {
+      "description": "Project capacity usage indicator",
+      "strategies": [
+        "text=/\\d+% of project capacity/"
+      ]
+    }
+  },
+
+  "projectConversations": {
+    "conversationItem": {
+      "description": "Individual conversation link within project",
+      "strategies": [
+        "a[href^='/chat/']"
+      ]
+    },
+    "conversationTitle": {
+      "description": "Conversation title text",
+      "strategies": [
+        "a[href^='/chat/'] > div:first-child"
+      ]
+    },
+    "lastMessageTime": {
+      "description": "Last message timestamp",
+      "strategies": [
+        "text=/Last message.*ago/"
+      ]
+    },
+    "chatOptionsButton": {
+      "description": "Options button for a conversation",
+      "strategies": [
+        "button[aria-label='Chat options']"
+      ]
+    }
+  },
+
+  "chat": {
+    "messageInput": {
+      "description": "Main chat input field (ProseMirror/TipTap editor)",
+      "strategies": [
+        "[data-testid='chat-input'] .ProseMirror",
+        ".tiptap.ProseMirror",
+        "div[role='textbox'][aria-label='Write your prompt to Claude']"
+      ]
+    },
+    "messageInputSsr": {
+      "description": "SSR textarea input (initial load, placeholder 'Reply...')",
+      "strategies": [
+        "[data-testid='chat-input-ssr']",
+        "textarea[aria-label='Write your prompt to Claude']",
+        "textarea[placeholder='Reply...']"
+      ]
+    },
+    "chatInputContainer": {
+      "description": "Container div for chat input",
+      "strategies": [
+        "[data-testid='chat-input']",
+        "[data-testid='chat-input-grid-container']"
+      ]
+    },
+    "sendButton": {
+      "description": "Button to send chat message",
+      "strategies": [
+        "button[aria-label='Send message']"
+      ]
+    },
+    "stopButton": {
+      "description": "Button to stop response generation",
+      "strategies": [
+        "button[aria-label='Stop response']",
+        "button[aria-label='Stop']"
+      ]
+    },
+    "fileUpload": {
+      "description": "File upload input in chat",
+      "strategies": [
+        "[data-testid='file-upload']",
+        "input[aria-label='Upload files']"
+      ]
+    },
+    "toggleMenuButton": {
+      "description": "Toggle menu button near chat input",
+      "strategies": [
+        "button[aria-label='Toggle menu']"
+      ]
+    },
+    "modelSelector": {
+      "description": "Model selection dropdown",
+      "strategies": [
+        "[data-testid='model-selector-dropdown']"
+      ]
+    },
+    "extendedThinkingToggle": {
+      "description": "Toggle for extended thinking mode",
+      "strategies": [
+        "button[aria-label='Extended thinking']"
+      ]
+    },
+    "responseInProgress": {
+      "description": "Indicator that Claude is still generating (stop button visible)",
+      "strategies": [
+        "button[aria-label='Stop response']",
+        "button[aria-label='Stop']"
+      ]
+    }
+  },
+
+  "messages": {
+    "messageContainer": {
+      "description": "Container for chat messages",
+      "strategies": [
+        "[data-testid='chat-messages']",
+        "[role='log']",
+        "main [class*='conversation']"
+      ]
+    },
+    "humanMessage": {
+      "description": "A message from the human user",
+      "strategies": [
+        "[data-testid='human-message']",
+        "[data-message-author='human']"
+      ]
+    },
+    "assistantMessage": {
+      "description": "A message from Claude",
+      "strategies": [
+        "[data-testid='assistant-message']",
+        "[data-message-author='assistant']"
+      ]
+    },
+    "messageText": {
+      "description": "Text content within a message",
+      "strategies": [
+        "[data-testid*='message'] [class*='prose']",
+        "[class*='message-content']"
+      ]
+    }
+  },
+
+  "modals": {
+    "dialog": {
+      "description": "Modal dialog container",
+      "strategies": [
+        "[role='dialog']",
+        "[role='alertdialog']"
+      ]
+    },
+    "dialogTitle": {
+      "description": "Dialog title",
+      "strategies": [
+        "[role='dialog'] h2",
+        "[role='alertdialog'] h2"
+      ]
+    },
+    "confirmButton": {
+      "description": "Confirm/primary action button in dialogs",
+      "strategies": [
+        "[role='dialog'] button:has-text('Delete')",
+        "[role='dialog'] button:has-text('Confirm')",
+        "[role='dialog'] button:has-text('Save')"
+      ]
+    },
+    "cancelButton": {
+      "description": "Cancel button in dialogs",
+      "strategies": [
+        "[role='dialog'] button:has-text('Cancel')"
+      ]
+    },
+    "closeButton": {
+      "description": "Close button for dialogs",
+      "strategies": [
+        "[role='dialog'] button[aria-label='Close']",
+        "[role='dialog'] button:has(svg)"
+      ]
+    }
+  },
+
+  "auth": {
+    "userMenuButton": {
+      "description": "User menu button when authenticated",
+      "strategies": [
+        "[data-testid='user-menu-button']"
+      ]
+    }
+  }
+}

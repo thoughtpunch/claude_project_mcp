@@ -1,0 +1,26 @@
+{
+  "name": "claude-project-mcp",
+  "version": "1.0.0",
+  "description": "MCP server to interact with Claude.ai Projects via browser automation",
+  "type": "module",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "tsx src/server.ts",
+    "debug": "HEADED=true SLOW_MO=500 tsx src/server.ts",
+    "test-selectors": "tsx src/test-selectors.ts",
+    "inspect": "tsx src/inspect.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "playwright": "^1.40.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "tsx": "^4.6.0",
+    "typescript": "^5.3.0"
+  }
+}

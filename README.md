@@ -242,11 +242,31 @@ When locating elements:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `CHROME_PROFILE` | Chrome user data directory | `~/.claude-project-mcp/chrome-profile` |
+| `CHROME_PROFILE` | Chrome user data directory (overrides auto-detection) | Auto-detected |
+| `USE_REAL_CHROME_PROFILE` | Use your real Chrome profile with cookies/logins | `true` |
 | `HEADED` | Show browser window | `false` |
 | `SLOW_MO` | Slow down actions (ms) | `0` |
 | `TIMEOUT` | Default timeout (ms) | `30000` |
 | `LOG_LEVEL` | Logging level | `info` |
+| `TWOCAPTCHA_TOKEN` | 2captcha API token for solving captchas | (none) |
+
+### Real Chrome Profile Paths (Auto-Detected)
+
+| Platform | Path |
+|----------|------|
+| macOS | `~/Library/Application Support/Google/Chrome` |
+| Windows | `%LOCALAPPDATA%\Google\Chrome\User Data` |
+| Linux | `~/.config/google-chrome` |
+
+**Note:** Using your real Chrome profile means the automation uses your existing cookies, logins, and browser fingerprint. This significantly improves Cloudflare bypass success. Make sure Chrome is closed before running.
+
+### Stealth Mode
+
+The server uses `playwright-extra` with the stealth plugin to avoid bot detection:
+- Removes automation indicators (`navigator.webdriver`)
+- Spoofs realistic browser fingerprints
+- Uses Chrome's new headless mode (`headless: 'new'`)
+- Applies comprehensive anti-detection patches
 
 ## Known Limitations
 

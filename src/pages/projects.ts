@@ -47,10 +47,29 @@ export class ProjectsPage extends BasePage {
     return null;
   }
 
+  // Dismiss any open dialog/modal that might be blocking
+  private async dismissOpenDialog(): Promise<void> {
+    try {
+      // Check if a dialog is open by looking for cancel button
+      const cancelButton = this.page.locator('button:has-text("Cancel")').first();
+      const isVisible = await cancelButton.isVisible({ timeout: 500 }).catch(() => false);
+
+      if (isVisible) {
+        log.info('Found open dialog, dismissing it');
+        await cancelButton.click();
+        await this.page.waitForTimeout(500);
+      }
+    } catch {
+      // No dialog open, continue
+    }
+  }
+
   // Navigate to projects page
   async navigate(): Promise<void> {
-    // Skip withScreenshot wrapper to avoid nested error handling issues
-    // Skip if already on projects page
+    // First, dismiss any open dialogs that might be blocking
+    await this.dismissOpenDialog();
+
+    // Skip if already on projects page (and no dialog was open)
     if (this.url.includes('/projects')) {
       log.info('Already on projects page, skipping navigation');
       return;
@@ -107,11 +126,50 @@ export class ProjectsPage extends BasePage {
   private async listProjectsFromDom(): Promise<ProjectInfo[]> {
     const projectsMap = new Map<string, ProjectInfo>(); // Use map to dedupe by ID
 
-    // Scroll to load all lazy-loaded projects
-    await this.scrollToLoadAll({ maxScrolls: 10, scrollDelay: 500 });
+    // Wait for the page to be ready
+    await this.page.waitForTimeout(1000);
 
-    // Wait a bit for any final renders
-    await this.page.waitForTimeout(300);
+    // Try to find a scrollable container for projects, fallback to main or body
+    const scrollContainer = await this.page.evaluate(() => {
+      // Try different containers that might hold the projects list
+      const main = document.querySelector('main');
+      if (main && main.scrollHeight > main.clientHeight) {
+        return 'main';
+      }
+      // Check for any scrollable div that contains project links
+      const containers = document.querySelectorAll('div[class*="scroll"], div[style*="overflow"]');
+      for (const container of containers) {
+        if (container.querySelector('a[href*="/project/"]')) {
+          return null; // Use page scroll instead
+        }
+      }
+      return null;
+    });
+
+    // Scroll to load lazy content - scroll multiple times to ensure all loaded
+    for (let i = 0; i < 5; i++) {
+      await this.page.evaluate((selector) => {
+        const container = selector ? document.querySelector(selector) : window;
+        if (container === window) {
+          window.scrollTo(0, document.body.scrollHeight);
+        } else if (container instanceof Element) {
+          container.scrollTop = container.scrollHeight;
+        }
+      }, scrollContainer);
+      await this.page.waitForTimeout(500);
+    }
+
+    // Scroll back to top
+    await this.page.evaluate((selector) => {
+      const container = selector ? document.querySelector(selector) : window;
+      if (container === window) {
+        window.scrollTo(0, 0);
+      } else if (container instanceof Element) {
+        container.scrollTop = 0;
+      }
+    }, scrollContainer);
+
+    await this.page.waitForTimeout(500);
 
     // Scrape all project links from the full DOM
     const projectData = await this.page.evaluate(() => {
@@ -120,7 +178,7 @@ export class ProjectsPage extends BasePage {
 
       links.forEach((link) => {
         const href = link.getAttribute('href');
-        if (href) {
+        if (href && href.includes('/project/')) {
           // Get text content, preferring first line/title
           let text = link.textContent?.trim() || '';
           // Try to get just the title (first meaningful text)
@@ -128,12 +186,18 @@ export class ProjectsPage extends BasePage {
           if (firstDiv) {
             text = firstDiv.textContent?.trim() || text;
           }
-          results.push({ href, text: text.split('\n')[0].trim() });
+          // Clean up text - take first line only
+          text = text.split('\n')[0].trim();
+          if (text) {
+            results.push({ href, text });
+          }
         }
       });
 
       return results;
     });
+
+    log.info(`Scraped ${projectData.length} project links from DOM`);
 
     // Process scraped data
     for (const { href, text } of projectData) {
@@ -152,7 +216,7 @@ export class ProjectsPage extends BasePage {
     }
 
     const projects = Array.from(projectsMap.values());
-    log.info(`Found ${projects.length} projects via DOM (after scrolling)`);
+    log.info(`Found ${projects.length} unique projects via DOM`);
     return projects;
   }
 
@@ -208,33 +272,53 @@ export class ProjectsPage extends BasePage {
     return this.withScreenshot('create-project', async () => {
       await this.navigate();
 
-      // Click create button
-      await this.click('projectList.createProjectButton');
-      await this.page.waitForTimeout(500);
+      // Check if create dialog is already open (from a previous failed attempt)
+      const dialogAlreadyOpen = await this.exists('projectDetail.nameInput', { timeout: 1000 });
+
+      if (!dialogAlreadyOpen) {
+        // Click create button to open dialog
+        await this.click('projectList.createProjectButton');
+        await this.page.waitForTimeout(500);
+      } else {
+        log.info('Create dialog already open, skipping button click');
+      }
 
       // Fill in name
       await this.fill('projectDetail.nameInput', name, { clear: true });
 
-      // Fill in instructions if provided
+      // Fill in description/instructions if provided (this goes in the second field)
       if (instructions) {
-        await this.fill('projectDetail.instructionsTextarea', instructions, { clear: true });
+        // The second field is for description, not instructions
+        const hasDescField = await this.exists('projectDetail.descriptionInput', { timeout: 1000 });
+        if (hasDescField) {
+          await this.fill('projectDetail.descriptionInput', instructions, { clear: true });
+        }
       }
 
       // Save
       await this.click('projectDetail.saveButton');
-      await this.waitForNavigation();
 
-      log.action('created project', { name });
+      // Wait for URL to change to /project/{uuid} (up to 10 seconds)
+      const projectUrlPattern = /\/project\/([0-9a-f-]+)/i;
+      let id = '';
+      const startTime = Date.now();
 
-      // Get the new project's ID from URL (format: /project/{uuid})
-      const url = this.url;
-      const match = url.match(/\/project\/([^/?]+)/);
-      const id = match ? match[1] : '';
+      while (Date.now() - startTime < 10000) {
+        const currentUrl = this.page.url();
+        const match = currentUrl.match(projectUrlPattern);
+        if (match) {
+          id = match[1];
+          break;
+        }
+        await this.page.waitForTimeout(500);
+      }
+
+      log.action('created project', { name, id });
 
       return {
         id,
         name,
-        url: id ? getProjectUrl(id) : url,
+        url: id ? getProjectUrl(id) : this.url,
       };
     });
   }

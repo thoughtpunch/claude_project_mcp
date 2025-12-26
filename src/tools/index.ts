@@ -321,15 +321,36 @@ export async function handleTool(name: string, args: Record<string, unknown>): P
         }, null, 2);
       }
 
+      // ============================================================
+      // DELETE_PROJECT IS DISABLED FOR SAFETY
+      // ============================================================
+      // This functionality is temporarily disabled because:
+      // 1. Delete is a DANGEROUS operation that cannot be undone
+      // 2. The UI selectors need to be updated (no Settings tab in current UI)
+      // 3. Need to implement proper safeguards before re-enabling
+      //
+      // To re-enable: uncomment the original code below and update
+      // the deleteProject() method in projects.ts with correct selectors
+      // ============================================================
+      //
+      // ORIGINAL CODE (DO NOT DELETE):
+      // case 'delete_project': {
+      //   const { project, confirm } = args as { project: string; confirm: boolean };
+      //   if (!confirm) {
+      //     return 'Error: Must set confirm=true to delete a project';
+      //   }
+      //   const page = await getPage();
+      //   const projectsPage = new ProjectsPage(page);
+      //   await projectsPage.deleteProject(project);
+      //   return `Deleted project: ${project}`;
+      // }
+      //
+      // ============================================================
       case 'delete_project': {
-        const { project, confirm } = args as { project: string; confirm: boolean };
-        if (!confirm) {
-          return 'Error: Must set confirm=true to delete a project';
-        }
-        const page = await getPage();
-        const projectsPage = new ProjectsPage(page);
-        await projectsPage.deleteProject(project);
-        return `Deleted project: ${project}`;
+        // Return a clear error message explaining why this is disabled
+        return 'Error: delete_project is DISABLED for safety. ' +
+          'The delete functionality requires UI selector updates. ' +
+          'Please delete projects manually via the Claude.ai web interface.';
       }
 
       case 'get_project_details': {

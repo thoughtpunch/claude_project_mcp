@@ -49,19 +49,42 @@ export class ProjectsPage extends BasePage {
 
   // Navigate to projects page
   async navigate(): Promise<void> {
-    await this.withScreenshot('navigate-to-projects', async () => {
-      // If not on claude.ai, go there first
-      if (!this.url.includes('claude.ai')) {
-        await this.goto(CLAUDE_BASE_URL);
-        await this.waitForNetworkIdle({ timeout: 10000 });
+    // Skip withScreenshot wrapper to avoid nested error handling issues
+    // Skip if already on projects page
+    if (this.url.includes('/projects')) {
+      log.info('Already on projects page, skipping navigation');
+      return;
+    }
+
+    // Navigate directly to projects URL - use 'commit' which fires earliest
+    log.info('Navigating to projects page', { url: CLAUDE_PROJECTS_URL });
+    try {
+      await this.page.goto(CLAUDE_PROJECTS_URL, {
+        waitUntil: 'commit',
+        timeout: 15000
+      });
+    } catch (e) {
+      log.warn('Navigation failed, continuing anyway', { error: String(e) });
+    }
+
+    // Give the page time to render (Claude SPA doesn't fire load events reliably)
+    await this.page.waitForTimeout(2000);
+
+    // Verify we're on the projects page
+    const currentUrl = this.page.url();
+    log.info('Current URL after navigation', { currentUrl });
+
+    if (!currentUrl.includes('/projects')) {
+      log.warn('Not on projects page after first attempt, retrying');
+      try {
+        await this.page.goto(CLAUDE_PROJECTS_URL, { waitUntil: 'commit', timeout: 10000 });
+        await this.page.waitForTimeout(2000);
+      } catch {
+        log.warn('Retry navigation also failed');
       }
+    }
 
-      // Navigate directly to projects URL
-      await this.goto(CLAUDE_PROJECTS_URL);
-      await this.waitForNetworkIdle({ timeout: 10000 });
-
-      log.action('navigated to projects');
-    });
+    log.action('navigated to projects');
   }
 
   // Check if we're on the projects page
@@ -69,114 +92,67 @@ export class ProjectsPage extends BasePage {
     return this.url.includes('/project');
   }
 
-  // Get list of all projects using API interception
+  // Get list of all projects - uses DOM scraping for reliability
   async listProjects(): Promise<ProjectInfo[]> {
     return this.withScreenshot('list-projects', async () => {
-      // Set up API interception
-      let apiResponse: ProjectApiResponse[] | null = null;
-
-      const responsePromise = this.page.waitForResponse(
-        (response: Response) => PROJECTS_API_PATTERN.test(response.url()) && response.status() === 200,
-        { timeout: 15000 }
-      ).catch(() => null);
-
-      // Navigate to projects to trigger API call
+      // Navigate to projects page
       await this.navigate();
 
-      // Try to get API response
-      const response = await responsePromise;
-      if (response) {
-        try {
-          const data = await response.json();
-          // API returns array directly or wrapped in a property
-          apiResponse = Array.isArray(data) ? data : (data.projects || data.results || []);
-          log.info(`Got ${apiResponse?.length || 0} projects from API`);
-        } catch (e) {
-          log.warn('Failed to parse API response', { error: String(e) });
-        }
-      }
-
-      // If we got API data, use it
-      if (apiResponse && apiResponse.length > 0) {
-        return apiResponse.map((p: ProjectApiResponse) => ({
-          id: p.uuid,
-          name: p.name,
-          description: p.description,
-          created_at: p.created_at,
-          updated_at: p.updated_at,
-          is_starred: p.is_starred,
-          url: getProjectUrl(p.uuid),
-        }));
-      }
-
-      // Fallback to DOM scraping
-      log.info('Falling back to DOM scraping for project list');
+      // Use DOM scraping which is more reliable than API interception
       return this.listProjectsFromDom();
     });
   }
 
-  // Fallback: scrape projects from DOM
+  // Fallback: scrape projects from DOM with scrolling
   private async listProjectsFromDom(): Promise<ProjectInfo[]> {
-    const projects: ProjectInfo[] = [];
+    const projectsMap = new Map<string, ProjectInfo>(); // Use map to dedupe by ID
 
-    // Wait for project list to load
-    const hasProjects = await this.exists('projectList.container', { timeout: 5000 });
-    if (!hasProjects) {
-      // Try to find any project links
-      const projectLinks = this.page.locator('a[href*="/project/"]');
-      const count = await projectLinks.count();
+    // Scroll to load all lazy-loaded projects
+    await this.scrollToLoadAll({ maxScrolls: 10, scrollDelay: 500 });
 
-      for (let i = 0; i < count; i++) {
-        const link = projectLinks.nth(i);
-        const href = await link.getAttribute('href');
-        const text = await link.innerText().catch(() => '');
+    // Wait a bit for any final renders
+    await this.page.waitForTimeout(300);
 
+    // Scrape all project links from the full DOM
+    const projectData = await this.page.evaluate(() => {
+      const links = document.querySelectorAll('a[href*="/project/"]');
+      const results: Array<{ href: string; text: string }> = [];
+
+      links.forEach((link) => {
+        const href = link.getAttribute('href');
         if (href) {
-          const match = href.match(/\/project\/([^/?]+)/);
-          if (match) {
-            projects.push({
-              id: match[1],
-              name: text.split('\n')[0].trim() || `Project ${i + 1}`,
-              url: href.startsWith('http') ? href : `${CLAUDE_BASE_URL}${href}`,
-            });
+          // Get text content, preferring first line/title
+          let text = link.textContent?.trim() || '';
+          // Try to get just the title (first meaningful text)
+          const firstDiv = link.querySelector('div');
+          if (firstDiv) {
+            text = firstDiv.textContent?.trim() || text;
           }
+          results.push({ href, text: text.split('\n')[0].trim() });
         }
-      }
-    } else {
-      // Use configured selectors
-      const projectItems = await this.findAll('projectList.projectItem');
-      const count = await projectItems.count();
+      });
 
-      for (let i = 0; i < count; i++) {
-        const item = projectItems.nth(i);
-        let name = '';
-        try {
-          name = await item.innerText();
-          name = name.split('\n')[0].trim();
-        } catch {
-          name = `Project ${i + 1}`;
-        }
+      return results;
+    });
 
-        let url: string | undefined;
-        let id: string | undefined;
-        try {
-          const href = await item.locator('a').first().getAttribute('href');
-          if (href) {
-            url = href.startsWith('http') ? href : `${CLAUDE_BASE_URL}${href}`;
-            const match = href.match(/\/project\/([^/?]+)/);
-            if (match) {
-              id = match[1];
-            }
-          }
-        } catch {}
-
-        if (id) {
-          projects.push({ id, name, url: url || getProjectUrl(id) });
+    // Process scraped data
+    for (const { href, text } of projectData) {
+      const match = href.match(/\/project\/([^/?]+)/);
+      if (match) {
+        const id = match[1];
+        // Only add if not already seen (deduplication)
+        if (!projectsMap.has(id)) {
+          projectsMap.set(id, {
+            id,
+            name: text || `Project ${projectsMap.size + 1}`,
+            url: href.startsWith('http') ? href : `${CLAUDE_BASE_URL}${href}`,
+          });
         }
       }
     }
 
-    log.info(`Found ${projects.length} projects via DOM`);
+    const projects = Array.from(projectsMap.values());
+    log.info(`Found ${projects.length} projects via DOM (after scrolling)`);
     return projects;
   }
 
@@ -271,14 +247,14 @@ export class ProjectsPage extends BasePage {
 
       if (idOrName.startsWith('http')) {
         await this.goto(idOrName);
-        await this.waitForNetworkIdle({ timeout: 10000 });
+        await this.waitForDomStable({ timeout: 5000 });
         return;
       }
 
       if (uuidPattern.test(idOrName)) {
         // It's a UUID - navigate directly to /project/{uuid}
         await this.goto(getProjectUrl(idOrName));
-        await this.waitForNetworkIdle({ timeout: 10000 });
+        await this.waitForDomStable({ timeout: 5000 });
         return;
       }
 
@@ -293,7 +269,7 @@ export class ProjectsPage extends BasePage {
       }
 
       await this.goto(project.url);
-      await this.waitForNetworkIdle({ timeout: 10000 });
+      await this.waitForDomStable({ timeout: 5000 });
     });
   }
 

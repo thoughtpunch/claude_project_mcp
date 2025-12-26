@@ -1,0 +1,4 @@
+# Test dependencies for Claude Project MCP
+pytest>=7.0.0
+pytest-order>=1.0.0
+pytest-timeout>=2.0.0

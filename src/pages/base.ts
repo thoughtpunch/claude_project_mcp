@@ -63,11 +63,20 @@ export abstract class BasePage {
 
   // Common waits
   async waitForNavigation(options?: { timeout?: number }) {
-    await this.page.waitForLoadState('domcontentloaded', options);
+    // Use commit which is fastest and most reliable
+    try {
+      await this.page.waitForLoadState('domcontentloaded', { timeout: options?.timeout || 5000 });
+    } catch {
+      // If load state times out, just continue - page may already be loaded
+    }
   }
 
   async waitForNetworkIdle(options?: { timeout?: number }) {
-    await this.page.waitForLoadState('networkidle', options);
+    try {
+      await this.page.waitForLoadState('networkidle', { timeout: options?.timeout || 5000 });
+    } catch {
+      // If network idle times out, just continue
+    }
   }
 
   // URL helpers
@@ -77,11 +86,60 @@ export abstract class BasePage {
 
   async goto(url: string) {
     log.action('navigate', { url });
-    await this.page.goto(url, { waitUntil: 'domcontentloaded' });
+    // Use 'commit' which fires earliest - just wait for navigation to start
+    // Then we'll use waitForDomStable to ensure content is ready
+    await this.page.goto(url, { waitUntil: 'commit', timeout: 30000 });
   }
 
   // Get raw page for advanced operations
   get rawPage(): Page {
     return this.page;
+  }
+
+  // Scroll to load all lazy-loaded content
+  async scrollToLoadAll(options?: { maxScrolls?: number; scrollDelay?: number }): Promise<void> {
+    const { maxScrolls = 20, scrollDelay = 300 } = options || {};
+
+    let previousHeight = 0;
+    let scrollCount = 0;
+
+    while (scrollCount < maxScrolls) {
+      const currentHeight = await this.page.evaluate(() => document.body.scrollHeight);
+
+      if (currentHeight === previousHeight) {
+        // No new content loaded, we're done
+        break;
+      }
+
+      previousHeight = currentHeight;
+
+      // Scroll to bottom
+      await this.page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+      await this.page.waitForTimeout(scrollDelay);
+
+      scrollCount++;
+    }
+
+    // Scroll back to top
+    await this.page.evaluate(() => window.scrollTo(0, 0));
+  }
+
+  // Wait for DOM to stabilize (no new elements being added)
+  async waitForDomStable(options?: { timeout?: number; checkInterval?: number }): Promise<void> {
+    const { timeout = 5000, checkInterval = 200 } = options || {};
+    const startTime = Date.now();
+
+    let previousCount = 0;
+
+    while (Date.now() - startTime < timeout) {
+      const currentCount = await this.page.evaluate(() => document.querySelectorAll('*').length);
+
+      if (currentCount === previousCount) {
+        return; // DOM is stable
+      }
+
+      previousCount = currentCount;
+      await this.page.waitForTimeout(checkInterval);
+    }
   }
 }

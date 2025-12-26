@@ -10,15 +10,14 @@
     "dev": "tsx src/server.ts",
     "debug": "HEADED=true SLOW_MO=500 tsx src/server.ts",
     "test-selectors": "tsx src/test-selectors.ts",
-    "inspect": "tsx src/inspect.ts"
+    "inspect": "tsx src/inspect.ts",
+    "test:plan": "python3 tests/run_integration_tests.py",
+    "test:commands": "python3 tests/run_integration_tests.py --commands"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "playwright": "^1.40.0",
-    "playwright-extra": "^4.3.6",
-    "puppeteer-extra-plugin-recaptcha": "^3.6.8",
-    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "zod": "^3.22.0"
   },
   "devDependencies": {

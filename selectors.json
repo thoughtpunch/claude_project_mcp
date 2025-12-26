@@ -142,6 +142,51 @@
         "section:has-text('Memory')",
         "div:has-text('Memory')"
       ]
+    },
+    "nameInput": {
+      "description": "Project name input in create/edit modal",
+      "strategies": [
+        "[role='dialog'] input[type='text']",
+        "input[placeholder*='name' i]",
+        "input[aria-label*='name' i]"
+      ]
+    },
+    "descriptionInput": {
+      "description": "Project description input in create/edit modal",
+      "strategies": [
+        "[role='dialog'] textarea",
+        "textarea[placeholder*='description' i]"
+      ]
+    },
+    "instructionsTextarea": {
+      "description": "Project instructions textarea in create/edit modal",
+      "strategies": [
+        "[role='dialog'] textarea",
+        "textarea[placeholder*='instruction' i]",
+        "textarea[aria-label*='instruction' i]"
+      ]
+    },
+    "saveButton": {
+      "description": "Save/create button in project modal",
+      "strategies": [
+        "[role='dialog'] button:has-text('Create')",
+        "[role='dialog'] button:has-text('Save')",
+        "button[type='submit']"
+      ]
+    },
+    "settingsTab": {
+      "description": "Settings tab in project detail",
+      "strategies": [
+        "button:has-text('Settings')",
+        "[role='tab']:has-text('Settings')"
+      ]
+    },
+    "deleteButton": {
+      "description": "Delete project button in settings",
+      "strategies": [
+        "button:has-text('Delete project')",
+        "button:has-text('Delete')"
+      ]
     }
   },
 

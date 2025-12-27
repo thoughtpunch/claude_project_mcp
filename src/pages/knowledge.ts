@@ -78,8 +78,15 @@ export class KnowledgePage extends BasePage {
       const fileName = path.basename(filePath);
       log.action('uploading file', { fileName, filePath });
 
-      // File inputs are hidden, so we need to find them differently
-      // Try the project-specific file input first, then fall back to generic
+      // Click the add files button to open dropdown
+      await this.click('projectFiles.addFilesButton');
+      await this.page.waitForTimeout(500);
+
+      // Click "Upload from device" option
+      await this.click('projectFiles.uploadFromDeviceOption');
+      await this.page.waitForTimeout(500);
+
+      // Now find and use the file input
       const selectors = [
         '[data-testid="project-doc-upload"]',
         'input[type="file"][accept*=".md"]',
@@ -281,10 +288,46 @@ export class KnowledgePage extends BasePage {
     });
   }
 
-  // Create a new text file in the project
+  // Create a new text file in the project using the "Add text content" UI
   async createTextFile(fileName: string, content: string): Promise<void> {
     return this.withScreenshot('create-text-file', async () => {
-      log.action('creating text file', { fileName, contentLength: content.length });
+      log.action('creating text file via UI', { fileName, contentLength: content.length });
+
+      // Click the add files button to open dropdown
+      await this.click('projectFiles.addFilesButton');
+      await this.page.waitForTimeout(500);
+
+      // Click "Add text content" option
+      await this.click('projectFiles.addTextContentOption');
+      await this.page.waitForTimeout(500);
+
+      // Fill in the dialog
+      // Try to find and fill the name input
+      try {
+        await this.fill('projectFiles.textContentNameInput', fileName, { timeout: 3000 });
+      } catch {
+        // Name input might not exist or have a different selector
+        log.debug('Could not find name input, dialog may auto-generate name');
+      }
+
+      // Fill the content textarea
+      await this.fill('projectFiles.textContentTextarea', content);
+      await this.page.waitForTimeout(300);
+
+      // Click save/add button
+      await this.click('projectFiles.textContentSaveButton');
+
+      // Wait for file to be created
+      await this.page.waitForTimeout(2000);
+
+      log.action('text file created via UI', { fileName });
+    });
+  }
+
+  // Create a text file by uploading (fallback method)
+  async createTextFileViaUpload(fileName: string, content: string): Promise<void> {
+    return this.withScreenshot('create-text-file-upload', async () => {
+      log.action('creating text file via upload', { fileName, contentLength: content.length });
 
       // Create a temporary file
       const os = await import('os');
@@ -307,6 +350,44 @@ export class KnowledgePage extends BasePage {
           // Ignore cleanup errors
         }
       }
+    });
+  }
+
+  // Connect GitHub repository to project knowledge base
+  async connectGitHub(): Promise<void> {
+    return this.withScreenshot('connect-github', async () => {
+      log.action('opening GitHub connection dialog');
+
+      // Click the add files button to open dropdown
+      await this.click('projectFiles.addFilesButton');
+      await this.page.waitForTimeout(500);
+
+      // Click "GitHub" option
+      await this.click('projectFiles.githubOption');
+      await this.page.waitForTimeout(1000);
+
+      // This will likely open an OAuth flow or configuration dialog
+      // The exact flow depends on whether GitHub is already connected
+      log.action('GitHub dialog opened - OAuth flow may be required');
+    });
+  }
+
+  // Connect Google Drive to project knowledge base
+  async connectGoogleDrive(): Promise<void> {
+    return this.withScreenshot('connect-google-drive', async () => {
+      log.action('opening Google Drive connection dialog');
+
+      // Click the add files button to open dropdown
+      await this.click('projectFiles.addFilesButton');
+      await this.page.waitForTimeout(500);
+
+      // Click "Google Drive" option
+      await this.click('projectFiles.googleDriveOption');
+      await this.page.waitForTimeout(1000);
+
+      // This will likely open an OAuth flow or file picker
+      // The exact flow depends on whether Google Drive is already connected
+      log.action('Google Drive dialog opened - OAuth flow may be required');
     });
   }
 }

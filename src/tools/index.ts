@@ -120,12 +120,117 @@ export const tools = [
     },
   },
   {
+    name: 'send_message_with_file',
+    description: 'Send a message with an attached file in a project chat',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        project: { type: 'string', description: 'Project ID or name (optional if already in a project)' },
+        message: { type: 'string', description: 'Message to send to Claude' },
+        file_path: { type: 'string', description: 'Local path to the file to attach' },
+        wait_for_response: { type: 'boolean', description: 'Wait for Claude to respond (default: true)' },
+      },
+      required: ['message', 'file_path'],
+    },
+  },
+  {
+    name: 'attach_file_to_chat',
+    description: 'Attach a file to the chat input (without sending). Use send_message after to send.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        file_path: { type: 'string', description: 'Local path to the file to attach' },
+      },
+      required: ['file_path'],
+    },
+  },
+  {
+    name: 'add_artifact_to_project',
+    description: 'Add the most recent artifact (document/code created by Claude) to project knowledge',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: 'list_artifacts',
+    description: 'List artifacts (documents/code) created by Claude in the current conversation',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {},
+      required: [],
+    },
+  },
+  {
     name: 'get_response',
     description: 'Get the last response from Claude in the current chat',
     inputSchema: {
       type: 'object' as const,
       properties: {},
       required: [],
+    },
+  },
+  {
+    name: 'dismiss_notifications',
+    description: 'Dismiss notification banners that may be blocking content',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: 'get_full_response',
+    description: 'Get the full last response from Claude, scrolling to capture all content',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: 'get_full_conversation',
+    description: 'Get the entire conversation with all messages from both human and assistant',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: 'analyze_page',
+    description: 'Analyze the current page state - useful for understanding context and debugging',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: 'sync_context',
+    description: 'Sync Claude Code working context to project knowledge. Creates/updates a context file with current state, decisions, and learnings. Use this to persist important context across sessions.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        project: { type: 'string', description: 'Project ID or name' },
+        context: { type: 'string', description: 'Current working context to store (files being worked on, decisions made, blockers, etc.)' },
+        append: { type: 'boolean', description: 'Append to existing context file instead of replacing (default: false)' },
+      },
+      required: ['project', 'context'],
+    },
+  },
+  {
+    name: 'ask_project',
+    description: 'Ask the project Claude a question and get guidance based on project knowledge, memory, and accumulated context. Use this when you need context-aware advice.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        project: { type: 'string', description: 'Project ID or name' },
+        question: { type: 'string', description: 'Question to ask the project Claude' },
+        include_context: { type: 'boolean', description: 'Include recent conversation context in the question (default: true)' },
+      },
+      required: ['project', 'question'],
     },
   },
   {
@@ -212,6 +317,28 @@ export const tools = [
       required: ['project', 'file_name', 'content'],
     },
   },
+  {
+    name: 'connect_github',
+    description: 'Open the GitHub connection dialog to link a repository to project knowledge base. Note: May require OAuth authentication.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        project: { type: 'string', description: 'Project ID or name' },
+      },
+      required: ['project'],
+    },
+  },
+  {
+    name: 'connect_google_drive',
+    description: 'Open the Google Drive connection dialog to link files to project knowledge base. Note: May require OAuth authentication.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        project: { type: 'string', description: 'Project ID or name' },
+      },
+      required: ['project'],
+    },
+  },
 
   // === DEBUG TOOLS ===
   {
@@ -273,6 +400,43 @@ export const tools = [
       type: 'object' as const,
       properties: {},
       required: [],
+    },
+  },
+  {
+    name: 'click_element',
+    description: 'Click an element by selector path (e.g., "projectFiles.addFilesButton") or CSS selector',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        selector: { type: 'string', description: 'Selector path (e.g., "chat.sendButton") or CSS selector' },
+        is_css: { type: 'boolean', description: 'If true, treat selector as raw CSS instead of selector path' },
+      },
+      required: ['selector'],
+    },
+  },
+  {
+    name: 'get_element_html',
+    description: 'Get the HTML content of elements matching a CSS selector (for debugging UI)',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        selector: { type: 'string', description: 'CSS selector to find elements' },
+        limit: { type: 'number', description: 'Max number of elements to return (default: 3)' },
+      },
+      required: ['selector'],
+    },
+  },
+  {
+    name: 'scroll',
+    description: 'Scroll the page or a specific element',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        direction: { type: 'string', description: 'Direction: "up", "down", "top", "bottom"' },
+        amount: { type: 'number', description: 'Pixels to scroll (default: 500, ignored for top/bottom)' },
+        selector: { type: 'string', description: 'CSS selector of element to scroll (optional, scrolls page if not provided)' },
+      },
+      required: ['direction'],
     },
   },
 ];
@@ -421,11 +585,150 @@ export async function handleTool(name: string, args: Record<string, unknown>): P
         return 'Message sent (not waiting for response)';
       }
 
+      case 'send_message_with_file': {
+        const { project, message, file_path, wait_for_response = true } = args as {
+          project?: string;
+          message: string;
+          file_path: string;
+          wait_for_response?: boolean;
+        };
+
+        const page = await getPage();
+
+        if (project) {
+          const projectsPage = new ProjectsPage(page);
+          await projectsPage.openProject(project);
+        }
+
+        const chatPage = new ChatPage(page);
+        const response = await chatPage.sendMessageWithFile(message, file_path, wait_for_response);
+
+        if (wait_for_response && response) {
+          return response;
+        }
+        return 'Message with file sent (not waiting for response)';
+      }
+
+      case 'attach_file_to_chat': {
+        const { file_path } = args as { file_path: string };
+        const page = await getPage();
+        const chatPage = new ChatPage(page);
+        await chatPage.attachFile(file_path);
+        return `File attached: ${file_path}`;
+      }
+
+      case 'add_artifact_to_project': {
+        const page = await getPage();
+        const chatPage = new ChatPage(page);
+        await chatPage.addArtifactToProject();
+        return 'Artifact added to project knowledge';
+      }
+
+      case 'list_artifacts': {
+        const page = await getPage();
+        const chatPage = new ChatPage(page);
+        const artifacts = await chatPage.getArtifacts();
+        return JSON.stringify(artifacts, null, 2);
+      }
+
       case 'get_response': {
         const page = await getPage();
         const chatPage = new ChatPage(page);
         const response = await chatPage.getLastAssistantMessage();
         return response || 'No response found';
+      }
+
+      case 'dismiss_notifications': {
+        const page = await getPage();
+        const chatPage = new ChatPage(page);
+        await chatPage.dismissNotifications();
+        return 'Notifications dismissed';
+      }
+
+      case 'get_full_response': {
+        const page = await getPage();
+        const chatPage = new ChatPage(page);
+        const response = await chatPage.getFullResponse();
+        return response || 'No response found';
+      }
+
+      case 'get_full_conversation': {
+        const page = await getPage();
+        const chatPage = new ChatPage(page);
+        const messages = await chatPage.getFullConversation();
+        return JSON.stringify(messages, null, 2);
+      }
+
+      case 'analyze_page': {
+        const page = await getPage();
+        const chatPage = new ChatPage(page);
+        const state = await chatPage.analyzePageState();
+        return JSON.stringify(state, null, 2);
+      }
+
+      case 'sync_context': {
+        const { project, context, append = false } = args as {
+          project: string;
+          context: string;
+          append?: boolean;
+        };
+        const page = await getPage();
+        const projectsPage = new ProjectsPage(page);
+        const knowledgePage = new KnowledgePage(page);
+
+        await projectsPage.openProject(project);
+        await page.waitForTimeout(1000);
+
+        const fileName = 'CLAUDE_CODE_CONTEXT.md';
+        const timestamp = new Date().toISOString();
+        let content: string;
+
+        if (append) {
+          // Try to read existing content
+          const existing = await knowledgePage.readFileContent(fileName).catch(() => '');
+          content = existing
+            ? `${existing}\n\n---\n\n## Update: ${timestamp}\n\n${context}`
+            : `# Claude Code Context\n\n## Created: ${timestamp}\n\n${context}`;
+        } else {
+          content = `# Claude Code Context\n\nLast synced: ${timestamp}\n\n${context}`;
+        }
+
+        // Check if file exists and update/create accordingly
+        const files = await knowledgePage.listFiles();
+        const fileExists = files.some(f => f.name === fileName);
+
+        if (fileExists) {
+          // Delete and recreate (simpler than editing)
+          await knowledgePage.deleteFile(fileName).catch(() => {});
+          await page.waitForTimeout(500);
+        }
+
+        await knowledgePage.createTextFile(fileName, content);
+        return `Context synced to ${fileName} in project "${project}"`;
+      }
+
+      case 'ask_project': {
+        const { project, question, include_context = true } = args as {
+          project: string;
+          question: string;
+          include_context?: boolean;
+        };
+        const page = await getPage();
+        const projectsPage = new ProjectsPage(page);
+        const chatPage = new ChatPage(page);
+
+        await projectsPage.openProject(project);
+        await page.waitForTimeout(1000);
+
+        // Build the question with context if requested
+        let fullQuestion = question;
+        if (include_context) {
+          fullQuestion = `[Question from Claude Code seeking guidance based on project knowledge]\n\n${question}\n\nPlease provide advice based on the project's accumulated knowledge, memory, and context files.`;
+        }
+
+        // Send the question and wait for response
+        const response = await chatPage.sendMessage(fullQuestion, true);
+        return response || 'No response received';
       }
 
       case 'list_conversations': {
@@ -503,6 +806,28 @@ export async function handleTool(name: string, args: Record<string, unknown>): P
         return `Created file: ${file_name} (${content.length} characters)`;
       }
 
+      case 'connect_github': {
+        const { project } = args as { project: string };
+        const page = await getPage();
+        const projectsPage = new ProjectsPage(page);
+        await projectsPage.openProject(project);
+
+        const knowledgePage = new KnowledgePage(page);
+        await knowledgePage.connectGitHub();
+        return 'GitHub connection dialog opened. You may need to complete OAuth authentication in the browser.';
+      }
+
+      case 'connect_google_drive': {
+        const { project } = args as { project: string };
+        const page = await getPage();
+        const projectsPage = new ProjectsPage(page);
+        await projectsPage.openProject(project);
+
+        const knowledgePage = new KnowledgePage(page);
+        await knowledgePage.connectGoogleDrive();
+        return 'Google Drive connection dialog opened. You may need to complete OAuth authentication in the browser.';
+      }
+
       // === DEBUG TOOLS ===
       case 'take_screenshot': {
         const { label = 'manual', full_page = false } = args as { label?: string; full_page?: boolean };
@@ -578,6 +903,141 @@ export async function handleTool(name: string, args: Record<string, unknown>): P
       case 'close_browser': {
         await closeBrowser();
         return 'Browser closed';
+      }
+
+      case 'click_element': {
+        const { selector, is_css = false } = args as { selector: string; is_css?: boolean };
+        const page = await getPage();
+
+        if (is_css) {
+          await page.locator(selector).first().click();
+        } else {
+          // Try to use selector path from selectors.json
+          const { clickElement } = await import('../selectors.js');
+          await clickElement(page, selector);
+        }
+        return `Clicked: ${selector}`;
+      }
+
+      case 'get_element_html': {
+        const { selector, limit = 3 } = args as { selector: string; limit?: number };
+        const page = await getPage();
+
+        const elements = page.locator(selector);
+        const count = await elements.count();
+        const results: string[] = [];
+
+        for (let i = 0; i < Math.min(count, limit); i++) {
+          const html = await elements.nth(i).innerHTML().catch(() => '(error getting innerHTML)');
+          results.push(`[${i}] ${html.substring(0, 1000)}`);
+        }
+
+        return `Found ${count} elements matching "${selector}":\n\n${results.join('\n\n')}`;
+      }
+
+      case 'scroll': {
+        const { direction, amount = 500, selector } = args as {
+          direction: string;
+          amount?: number;
+          selector?: string;
+        };
+        const page = await getPage();
+
+        // Helper function to find scrollable chat container
+        const findScrollableContainer = async (): Promise<string | null> => {
+          return page.evaluate(() => {
+            // Find elements that are actually scrollable (scrollHeight > clientHeight and has overflow)
+            const candidates = document.querySelectorAll('*');
+            for (const el of candidates) {
+              const style = window.getComputedStyle(el);
+              const overflowY = style.overflowY;
+              const scrollHeight = el.scrollHeight;
+              const clientHeight = el.clientHeight;
+
+              // Check if it's a scrollable container with chat messages
+              if ((overflowY === 'auto' || overflowY === 'scroll') &&
+                  scrollHeight > clientHeight + 100 &&
+                  (el.querySelector('.font-claude-response') || el.querySelector('[data-testid="user-message"]'))) {
+                // Return a unique selector for this element
+                if (el.id) return `#${el.id}`;
+                if (el.className) {
+                  const classes = el.className.split(' ').filter((c: string) => c && !c.includes('[')).slice(0, 3).join('.');
+                  if (classes) return `.${classes}`;
+                }
+              }
+            }
+            return null;
+          });
+        };
+
+        let targetSelector = selector;
+
+        // If no selector provided and we're on a chat page, try to find the scrollable container
+        if (!targetSelector) {
+          const url = page.url();
+          if (url.includes('/chat/') || url.includes('/project/')) {
+            const foundSelector = await findScrollableContainer();
+            if (foundSelector) {
+              targetSelector = foundSelector;
+              log.debug(`Auto-detected scrollable container: ${foundSelector}`);
+            }
+          }
+        }
+
+        if (targetSelector) {
+          // Scroll within a specific element
+          const element = page.locator(targetSelector).first();
+          if (await element.count() === 0) {
+            return `Element not found: ${targetSelector}`;
+          }
+
+          switch (direction) {
+            case 'down':
+              await element.evaluate((el, amt) => el.scrollBy(0, amt), amount);
+              break;
+            case 'up':
+              await element.evaluate((el, amt) => el.scrollBy(0, -amt), amount);
+              break;
+            case 'top':
+              await element.evaluate(el => el.scrollTo(0, 0));
+              break;
+            case 'bottom':
+              await element.evaluate(el => el.scrollTo(0, el.scrollHeight));
+              break;
+            default:
+              return `Invalid direction: ${direction}. Use: up, down, top, bottom`;
+          }
+        } else {
+          // Scroll using keyboard (works reliably in chat pages)
+          // Calculate number of key presses based on amount (roughly 40px per arrow press)
+          const presses = Math.max(1, Math.ceil(amount / 100));
+
+          switch (direction) {
+            case 'down':
+              for (let i = 0; i < presses; i++) {
+                await page.keyboard.press('ArrowDown');
+                await page.waitForTimeout(50);
+              }
+              break;
+            case 'up':
+              for (let i = 0; i < presses; i++) {
+                await page.keyboard.press('ArrowUp');
+                await page.waitForTimeout(50);
+              }
+              break;
+            case 'top':
+              await page.keyboard.press('Home');
+              break;
+            case 'bottom':
+              await page.keyboard.press('End');
+              break;
+            default:
+              return `Invalid direction: ${direction}. Use: up, down, top, bottom`;
+          }
+        }
+
+        await page.waitForTimeout(300);
+        return `Scrolled ${direction}${targetSelector ? ` in ${targetSelector}` : ''}`;
       }
 
       default:

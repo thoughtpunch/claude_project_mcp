@@ -199,10 +199,42 @@
       ]
     },
     "addFilesButton": {
-      "description": "Button to add files to project",
+      "description": "Button to add files to project (opens dropdown)",
       "strategies": [
         "button[aria-label='Add files']",
         "[data-testid='project-doc-uploader-dropdown-trigger']"
+      ]
+    },
+    "uploadFromDeviceOption": {
+      "description": "Dropdown option to upload file from device",
+      "strategies": [
+        "text=Upload from device",
+        "div:has-text('Upload from device'):not(:has(div:has-text('Upload from device')))",
+        "[role='menuitem']:has-text('Upload from device')"
+      ]
+    },
+    "addTextContentOption": {
+      "description": "Dropdown option to add text content directly",
+      "strategies": [
+        "text=Add text content",
+        "div:has-text('Add text content'):not(:has(div:has-text('Add text content')))",
+        "[role='menuitem']:has-text('Add text content')"
+      ]
+    },
+    "githubOption": {
+      "description": "Dropdown option to connect GitHub",
+      "strategies": [
+        "div:has-text('GitHub'):not(:has(div:has-text('GitHub')))",
+        "text=GitHub",
+        "[role='menuitem']:has-text('GitHub')"
+      ]
+    },
+    "googleDriveOption": {
+      "description": "Dropdown option to connect Google Drive",
+      "strategies": [
+        "div:has-text('Google Drive'):not(:has(div:has-text('Google Drive')))",
+        "text=Google Drive",
+        "[role='menuitem']:has-text('Google Drive')"
       ]
     },
     "fileUploadInput": {
@@ -229,6 +261,35 @@
       "description": "Project capacity usage indicator",
       "strategies": [
         "text=/\\d+% of project capacity/"
+      ]
+    },
+    "textContentDialog": {
+      "description": "Dialog for adding text content",
+      "strategies": [
+        "[role='dialog']:has-text('Add text content')",
+        "[role='dialog']:has-text('text file')"
+      ]
+    },
+    "textContentNameInput": {
+      "description": "File name input in text content dialog",
+      "strategies": [
+        "[role='dialog'] input[type='text']",
+        "input[placeholder*='name' i]"
+      ]
+    },
+    "textContentTextarea": {
+      "description": "Text content textarea in dialog",
+      "strategies": [
+        "[role='dialog'] textarea",
+        "textarea[placeholder*='content' i]"
+      ]
+    },
+    "textContentSaveButton": {
+      "description": "Save button in text content dialog",
+      "strategies": [
+        "[role='dialog'] button:has-text('Add')",
+        "[role='dialog'] button:has-text('Save')",
+        "[role='dialog'] button[type='submit']"
       ]
     }
   },
@@ -298,10 +359,19 @@
       ]
     },
     "fileUpload": {
-      "description": "File upload input in chat",
+      "description": "Hidden file upload input in chat",
       "strategies": [
         "[data-testid='file-upload']",
+        "input[type='file']",
         "input[aria-label='Upload files']"
+      ]
+    },
+    "attachmentButton": {
+      "description": "Button to attach files to message (+ icon near input)",
+      "strategies": [
+        "button[aria-label='Attach files']",
+        "button[aria-label='Add content']",
+        "[data-testid='chat-input'] button:has(svg)"
       ]
     },
     "toggleMenuButton": {
@@ -328,21 +398,103 @@
         "button[aria-label='Stop response']",
         "button[aria-label='Stop']"
       ]
+    },
+    "responseComplete": {
+      "description": "Indicator that Claude has finished responding (send button visible again)",
+      "strategies": [
+        "button[aria-label='Send message']",
+        "[data-testid='send-button']"
+      ]
+    },
+    "errorMessage": {
+      "description": "Error message displayed in chat (rate limits, failures, etc)",
+      "strategies": [
+        "[data-testid='error-message']",
+        "[role='alert']:visible",
+        "div.bg-red-100:has-text('error')",
+        "div:has-text('rate limit'):not(:has(div))"
+      ]
+    },
+    "thinkingIndicator": {
+      "description": "Indicator that Claude is thinking/processing (e.g., 'Pondering...')",
+      "strategies": [
+        "text=Pondering",
+        "text=Thinking",
+        "[class*='thinking']",
+        "[class*='loading']"
+      ]
+    },
+    "streamingText": {
+      "description": "Text that is currently being streamed/generated",
+      "strategies": [
+        "[data-is-streaming='true']",
+        "[class*='streaming']"
+      ]
+    }
+  },
+
+  "artifacts": {
+    "artifactContainer": {
+      "description": "Container for an artifact/document created by Claude",
+      "strategies": [
+        "[data-testid='artifact']",
+        "[class*='artifact']",
+        "[data-artifact-id]"
+      ]
+    },
+    "addToProjectButton": {
+      "description": "Button to add artifact to project knowledge",
+      "strategies": [
+        "button:has-text('Add to project')",
+        "button[aria-label='Add to project']",
+        "[data-testid='add-to-project']"
+      ]
+    },
+    "artifactTitle": {
+      "description": "Title of an artifact",
+      "strategies": [
+        "[data-testid='artifact-title']",
+        "[class*='artifact'] h1",
+        "[class*='artifact'] h2"
+      ]
+    },
+    "artifactContent": {
+      "description": "Content area of an artifact",
+      "strategies": [
+        "[data-testid='artifact-content']",
+        "[class*='artifact'] [class*='content']",
+        "[class*='artifact'] pre"
+      ]
+    },
+    "copyArtifactButton": {
+      "description": "Button to copy artifact content",
+      "strategies": [
+        "button[aria-label='Copy']",
+        "button:has-text('Copy')"
+      ]
     }
   },
 
   "messages": {
     "messageContainer": {
-      "description": "Container for chat messages",
+      "description": "Container for chat messages (scrollable area)",
       "strategies": [
         "[data-testid='chat-messages']",
-        "[role='log']",
-        "main [class*='conversation']"
+        "[data-test-render-count]",
+        ".relative.w-full.min-h-full"
+      ]
+    },
+    "scrollContainer": {
+      "description": "The scrollable container for chat messages",
+      "strategies": [
+        "[class*='flex-1'][class*='overflow']",
+        "[data-test-render-count]"
       ]
     },
     "humanMessage": {
       "description": "A message from the human user",
       "strategies": [
+        "[data-testid='user-message']",
         "[data-testid='human-message']",
         "[data-message-author='human']"
       ]
@@ -350,13 +502,22 @@
     "assistantMessage": {
       "description": "A message from Claude",
       "strategies": [
+        ".font-claude-response",
         "[data-testid='assistant-message']",
         "[data-message-author='assistant']"
+      ]
+    },
+    "assistantMessageContent": {
+      "description": "The text content of Claude's response",
+      "strategies": [
+        ".font-claude-response .standard-markdown",
+        ".font-claude-response-body"
       ]
     },
     "messageText": {
       "description": "Text content within a message",
       "strategies": [
+        ".standard-markdown",
         "[data-testid*='message'] [class*='prose']",
         "[class*='message-content']"
       ]

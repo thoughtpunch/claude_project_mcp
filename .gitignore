@@ -29,3 +29,8 @@ Thumbs.db
 *.log
 npm-debug.log*
 __pycache__/
+
+# Test artifacts
+test_files/
+.venv/
+.pytest_cache/

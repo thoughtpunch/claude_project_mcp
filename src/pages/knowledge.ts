@@ -78,10 +78,29 @@ export class KnowledgePage extends BasePage {
       const fileName = path.basename(filePath);
       log.action('uploading file', { fileName, filePath });
 
-      // Find the file input
-      const fileInput = await this.find('projectFiles.fileUploadInput', { timeout: 5000 });
+      // File inputs are hidden, so we need to find them differently
+      // Try the project-specific file input first, then fall back to generic
+      const selectors = [
+        '[data-testid="project-doc-upload"]',
+        'input[type="file"][accept*=".md"]',
+        'input[type="file"][accept*=".pdf"]',
+        'input[type="file"]'
+      ];
 
-      // Set the file
+      let fileInput = null;
+      for (const selector of selectors) {
+        const locator = this.page.locator(selector).first();
+        if (await locator.count() > 0) {
+          fileInput = locator;
+          break;
+        }
+      }
+
+      if (!fileInput) {
+        throw new Error('Could not find file upload input');
+      }
+
+      // Set the file directly (works with hidden inputs)
       await fileInput.setInputFiles(filePath);
 
       // Wait for upload to complete
@@ -96,7 +115,27 @@ export class KnowledgePage extends BasePage {
     return this.withScreenshot('upload-files', async () => {
       log.action('uploading files', { count: filePaths.length });
 
-      const fileInput = await this.find('projectFiles.fileUploadInput', { timeout: 5000 });
+      // File inputs are hidden, so find them directly
+      const selectors = [
+        '[data-testid="project-doc-upload"]',
+        'input[type="file"][accept*=".md"]',
+        'input[type="file"][accept*=".pdf"]',
+        'input[type="file"]'
+      ];
+
+      let fileInput = null;
+      for (const selector of selectors) {
+        const locator = this.page.locator(selector).first();
+        if (await locator.count() > 0) {
+          fileInput = locator;
+          break;
+        }
+      }
+
+      if (!fileInput) {
+        throw new Error('Could not find file upload input');
+      }
+
       await fileInput.setInputFiles(filePaths);
 
       // Wait for uploads to complete

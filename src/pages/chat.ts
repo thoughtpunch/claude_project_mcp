@@ -173,8 +173,18 @@ export class ChatPage extends BasePage {
     const conversations: ConversationInfo[] = [];
 
     try {
-      const convLinks = await this.findAll('projectConversations.conversationItem');
+      // Extract project ID from current URL to filter conversations
+      const currentUrl = this.page.url();
+      const projectMatch = currentUrl.match(/\/project\/([^/?]+)/);
+      const currentProjectId = projectMatch ? projectMatch[1] : null;
+
+      // Look for conversations in the main content area only (not sidebar)
+      // The main area typically has the project conversations list
+      const mainArea = this.page.locator('main, [role="main"], .project-content').first();
+      const convLinks = mainArea.locator('a[href*="/chat/"]');
       const count = await convLinks.count();
+
+      const seen = new Set<string>(); // Dedupe by conversation ID
 
       for (let i = 0; i < count; i++) {
         const link = convLinks.nth(i);
@@ -183,14 +193,27 @@ export class ChatPage extends BasePage {
 
         if (href) {
           const match = href.match(/\/chat\/([^/?]+)/);
+          const convId = match ? match[1] : null;
+
+          // Skip duplicates
+          if (convId && seen.has(convId)) continue;
+          if (convId) seen.add(convId);
+
+          // Parse title and timestamp
+          const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+          const title = lines[0] || `Conversation ${i + 1}`;
+          const lastMessage = lines.find(l => l.includes('ago') || l.includes('minute') || l.includes('hour'));
+
           conversations.push({
-            id: match ? match[1] : href,
-            title: text.split('\n')[0].trim() || `Conversation ${i + 1}`,
-            lastMessage: text.includes('Last message') ? text.split('Last message')[1]?.trim() : undefined,
+            id: convId || href,
+            title,
+            lastMessage,
             url: href.startsWith('http') ? href : `https://claude.ai${href}`,
           });
         }
       }
+
+      log.info(`Found ${conversations.length} conversations in project`, { projectId: currentProjectId });
     } catch (error) {
       log.warn('Could not get project conversations', { error: String(error) });
     }

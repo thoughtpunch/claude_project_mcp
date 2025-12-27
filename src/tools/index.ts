@@ -11,6 +11,43 @@ import {
 } from '../selectors.js';
 import { takeScreenshot, takeFullPageScreenshot } from '../utils/screenshot.js';
 import { log } from '../utils/logger.js';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as crypto from 'crypto';
+
+// Manifest file for tracking project links
+const MANIFEST_FILE = '.claude-project.json';
+
+interface ProjectManifest {
+  projectId: string;
+  projectName: string;
+  linkedAt: string;
+  lastSync?: string;
+  syncedFiles: Record<string, { hash: string; syncedAt: string }>;
+}
+
+function getManifestPath(localPath?: string): string {
+  return path.join(localPath || process.cwd(), MANIFEST_FILE);
+}
+
+function readManifest(localPath?: string): ProjectManifest | null {
+  const manifestPath = getManifestPath(localPath);
+  if (!fs.existsSync(manifestPath)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+  } catch {
+    return null;
+  }
+}
+
+function writeManifest(manifest: ProjectManifest, localPath?: string): void {
+  const manifestPath = getManifestPath(localPath);
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+}
+
+function hashContent(content: string): string {
+  return crypto.createHash('md5').update(content).digest('hex').slice(0, 8);
+}
 
 // Tool definitions for MCP
 export const tools = [
@@ -437,6 +474,43 @@ export const tools = [
         selector: { type: 'string', description: 'CSS selector of element to scroll (optional, scrolls page if not provided)' },
       },
       required: ['direction'],
+    },
+  },
+
+  // === LOCAL SYNC TOOLS ===
+  {
+    name: 'link_project',
+    description: 'Link a local directory to a Claude.ai project. Creates .claude-project.json manifest file.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        project: { type: 'string', description: 'Project ID or name to link' },
+        local_path: { type: 'string', description: 'Local directory path (defaults to current working directory)' },
+      },
+      required: ['project'],
+    },
+  },
+  {
+    name: 'sync_status',
+    description: 'Check sync status between local directory and linked Claude.ai project. Shows which files exist in both places.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        local_path: { type: 'string', description: 'Local directory path (defaults to current working directory)' },
+      },
+      required: [],
+    },
+  },
+  {
+    name: 'mark_synced',
+    description: 'Mark a file as synced after uploading to project knowledge. Updates the local manifest.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        file_name: { type: 'string', description: 'Name of the file that was synced' },
+        local_path: { type: 'string', description: 'Local directory path (defaults to current working directory)' },
+      },
+      required: ['file_name'],
     },
   },
 ];
@@ -1038,6 +1112,113 @@ export async function handleTool(name: string, args: Record<string, unknown>): P
 
         await page.waitForTimeout(300);
         return `Scrolled ${direction}${targetSelector ? ` in ${targetSelector}` : ''}`;
+      }
+
+      // === LOCAL SYNC TOOLS ===
+      case 'link_project': {
+        const { project, local_path } = args as { project: string; local_path?: string };
+        const page = await getPage();
+        const projectsPage = new ProjectsPage(page);
+
+        // Get project info to get the ID and name
+        const projects = await projectsPage.listProjects();
+        const projectInfo = projects.find(
+          p => p.id === project || p.name.toLowerCase().includes(project.toLowerCase())
+        );
+
+        if (!projectInfo) {
+          return `Project not found: ${project}`;
+        }
+
+        const manifest: ProjectManifest = {
+          projectId: projectInfo.id,
+          projectName: projectInfo.name,
+          linkedAt: new Date().toISOString(),
+          syncedFiles: {},
+        };
+
+        writeManifest(manifest, local_path);
+        const manifestPath = getManifestPath(local_path);
+        return JSON.stringify({
+          status: 'linked',
+          project: projectInfo.name,
+          projectId: projectInfo.id,
+          manifestPath,
+        }, null, 2);
+      }
+
+      case 'sync_status': {
+        const { local_path } = args as { local_path?: string };
+        const manifest = readManifest(local_path);
+
+        if (!manifest) {
+          return JSON.stringify({
+            status: 'not_linked',
+            message: 'No .claude-project.json found. Use link_project to link a directory to a Claude project.',
+          }, null, 2);
+        }
+
+        // Get project files from Claude.ai
+        const page = await getPage();
+        const projectsPage = new ProjectsPage(page);
+        const knowledgePage = new KnowledgePage(page);
+
+        await projectsPage.openProject(manifest.projectId);
+        await page.waitForTimeout(1000);
+
+        const remoteFiles = await knowledgePage.listFiles();
+        const remoteFileNames = remoteFiles.map(f => f.name);
+
+        // Compare with synced files
+        const syncedFileNames = Object.keys(manifest.syncedFiles);
+        const inBoth = syncedFileNames.filter(f => remoteFileNames.includes(f));
+        const localOnly = syncedFileNames.filter(f => !remoteFileNames.includes(f));
+        const remoteOnly = remoteFileNames.filter(f => !syncedFileNames.includes(f));
+
+        return JSON.stringify({
+          status: 'linked',
+          project: manifest.projectName,
+          projectId: manifest.projectId,
+          linkedAt: manifest.linkedAt,
+          lastSync: manifest.lastSync,
+          files: {
+            synced: inBoth,
+            localManifestOnly: localOnly,
+            remoteOnly: remoteOnly,
+          },
+          remoteFiles: remoteFiles.map(f => ({ name: f.name, lines: f.lines })),
+        }, null, 2);
+      }
+
+      case 'mark_synced': {
+        const { file_name, local_path } = args as { file_name: string; local_path?: string };
+        const manifest = readManifest(local_path);
+
+        if (!manifest) {
+          return 'Error: No .claude-project.json found. Use link_project first.';
+        }
+
+        // Try to read local file to compute hash
+        const localFilePath = path.join(local_path || process.cwd(), file_name);
+        let hash = 'unknown';
+        if (fs.existsSync(localFilePath)) {
+          const content = fs.readFileSync(localFilePath, 'utf-8');
+          hash = hashContent(content);
+        }
+
+        manifest.syncedFiles[file_name] = {
+          hash,
+          syncedAt: new Date().toISOString(),
+        };
+        manifest.lastSync = new Date().toISOString();
+
+        writeManifest(manifest, local_path);
+        return JSON.stringify({
+          status: 'marked_synced',
+          file: file_name,
+          hash,
+          syncedAt: manifest.syncedFiles[file_name].syncedAt,
+        }, null, 2);
       }
 
       default:

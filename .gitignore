@@ -11,6 +11,9 @@ scraped/
 # Chrome profile (contains session data)
 .claude-project-mcp/
 
+# Local project link manifest
+.claude-project.json
+
 # Environment
 .env
 .env.local

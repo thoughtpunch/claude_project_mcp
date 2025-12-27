@@ -298,22 +298,49 @@ export class ProjectsPage extends BasePage {
       // Save
       await this.click('projectDetail.saveButton');
 
-      // Wait for URL to change to /project/{uuid} (up to 10 seconds)
+      // Wait for URL to change to /project/{uuid} (up to 15 seconds)
+      // Claude.ai uses client-side routing, so URL might change after render
       const projectUrlPattern = /\/project\/([0-9a-f-]+)/i;
       let id = '';
       const startTime = Date.now();
 
-      while (Date.now() - startTime < 10000) {
+      // First, wait for any navigation/loading to start
+      await this.page.waitForTimeout(1000);
+
+      while (Date.now() - startTime < 15000) {
         const currentUrl = this.page.url();
         const match = currentUrl.match(projectUrlPattern);
         if (match) {
           id = match[1];
+          log.info('Found project ID in URL', { id, url: currentUrl });
           break;
         }
+
+        // Also check if we're on a project page by looking for project UI elements
+        const hasProjectUI = await this.page.locator('h1').first().innerText().catch(() => '');
+        if (hasProjectUI === name && currentUrl.includes('/project/')) {
+          // We're on the project page but URL parsing failed, try again
+          const retryMatch = currentUrl.match(projectUrlPattern);
+          if (retryMatch) {
+            id = retryMatch[1];
+            break;
+          }
+        }
+
         await this.page.waitForTimeout(500);
       }
 
-      log.action('created project', { name, id });
+      // Final attempt: get current URL one more time
+      if (!id) {
+        await this.page.waitForTimeout(1000);
+        const finalUrl = this.page.url();
+        const finalMatch = finalUrl.match(projectUrlPattern);
+        if (finalMatch) {
+          id = finalMatch[1];
+        }
+      }
+
+      log.action('created project', { name, id, foundId: !!id });
 
       return {
         id,

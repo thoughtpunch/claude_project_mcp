@@ -37,3 +37,7 @@ __pycache__/
 test_files/
 .venv/
 .pytest_cache/
+
+# MCP Registry tokens
+.mcpregistry_*
+server.json

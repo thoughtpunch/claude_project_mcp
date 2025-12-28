@@ -1,12 +1,12 @@
 {
-  "name": "claude-project-mcp",
-  "version": "1.0.0",
+  "name": "claude_project_mcp",
+  "version": "1.0.1",
   "mcpName": "io.github.thoughtpunch/claude_project_mcp",
   "description": "MCP server for Claude.ai Projects via browser automation",
   "type": "module",
   "main": "dist/server.js",
   "bin": {
-    "claude-project-mcp": "dist/server.js"
+    "claude_project_mcp": "dist/server.js"
   },
   "files": [
     "dist",

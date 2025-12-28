@@ -118,7 +118,7 @@ The server uses Playwright to automate a Chrome browser, maintaining a persisten
 ### Option 1: Install from npm
 
 ```bash
-npm install -g claude-project-mcp
+npm install -g claude_project_mcp
 npx playwright install chromium
 ```
 
@@ -128,7 +128,7 @@ Add to your MCP client configuration (e.g., Claude Code's `~/.claude.json`):
 {
   "mcpServers": {
     "claude-project": {
-      "command": "claude-project-mcp"
+      "command": "claude_project_mcp"
     }
   }
 }
@@ -162,7 +162,7 @@ Add to your MCP client configuration:
 
 ```bash
 # Login to claude.ai (one-time setup)
-npm run inspect  # or: npx claude-project-mcp-inspect (if installed globally)
+npm run inspect  # or: npx claude_project_mcp (if installed globally)
 # Browser opens → login to claude.ai → press Enter to close
 ```
 

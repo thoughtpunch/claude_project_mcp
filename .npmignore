@@ -1,0 +1,44 @@
+# Source files (dist is included)
+src/
+tsconfig.json
+
+# Test files
+tests/
+test_files/
+*.test.ts
+*.spec.ts
+pytest.ini
+requirements-test.txt
+.pytest_cache/
+.venv/
+
+# Debug/development artifacts
+screenshots/
+scraped/
+.claude/
+.claude-project-mcp/
+.claude-project.json
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+npm-debug.log*
+__pycache__/
+
+# Other
+node_modules/

@@ -1,11 +1,21 @@
 {
   "name": "claude-project-mcp",
   "version": "1.0.0",
-  "description": "MCP server to interact with Claude.ai Projects via browser automation",
+  "description": "MCP server to interact with Claude.ai Projects via browser automation - access project memory, knowledge files, and chat with full project context",
   "type": "module",
   "main": "dist/server.js",
+  "bin": {
+    "claude-project-mcp": "dist/server.js"
+  },
+  "files": [
+    "dist",
+    "selectors.json",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm run build",
     "start": "node dist/server.js",
     "dev": "tsx src/server.ts",
     "debug": "HEADED=true SLOW_MO=500 tsx src/server.ts",
@@ -13,6 +23,32 @@
     "inspect": "tsx src/inspect.ts",
     "test:plan": "python3 tests/run_integration_tests.py",
     "test:commands": "python3 tests/run_integration_tests.py --commands"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "anthropic",
+    "claude-ai",
+    "ai",
+    "llm",
+    "browser-automation",
+    "playwright",
+    "claude-code",
+    "ai-assistant"
+  ],
+  "author": "thoughtpunch",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thoughtpunch/claude_project_mcp.git"
+  },
+  "homepage": "https://github.com/thoughtpunch/claude_project_mcp#readme",
+  "bugs": {
+    "url": "https://github.com/thoughtpunch/claude_project_mcp/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

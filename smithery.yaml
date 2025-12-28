@@ -1,4 +1,4 @@
-name: claude_project_mcp
+name: claude-project-mcp
 description: MCP server for Claude.ai Projects via browser automation
 version: 1.0.0
 license: MIT

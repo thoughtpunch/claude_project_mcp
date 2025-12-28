@@ -10,9 +10,7 @@
   },
   "files": [
     "dist",
-    "selectors.json",
-    "README.md",
-    "LICENSE"
+    "selectors.json"
   ],
   "scripts": {
     "build": "tsc",

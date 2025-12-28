@@ -34,7 +34,15 @@ A Model Context Protocol (MCP) server that enables programmatic interaction with
 
 The server uses Playwright to automate a Chrome browser, maintaining a persistent login session. It exposes MCP tools that translate into browser actions on claude.ai.
 
-## Capabilities (21 Tools)
+## Capabilities (41 Tools)
+
+### Project Management Tools
+| Tool | Description |
+|------|-------------|
+| `list_projects` | List all projects |
+| `open_project` | Open project, return current state |
+| `create_project` | Create new project |
+| `delete_project` | Delete project (requires confirmation) |
 
 ### Project Context Tools
 | Tool | Description |
@@ -52,56 +60,92 @@ The server uses Playwright to automate a Chrome browser, maintaining a persisten
 | `create_file` | Create new text file in knowledge base |
 | `upload_file` | Upload local file to knowledge base |
 | `delete_file` | Remove file from knowledge base |
+| `connect_github` | Open GitHub connection dialog to link a repo |
+| `connect_google_drive` | Open Google Drive connection dialog |
 
 ### Chat Tools
 | Tool | Description |
 |------|-------------|
 | `send_message` | Send message to project chat, receive response with full project context |
+| `send_message_with_file` | Send message with an attached file |
+| `attach_file_to_chat` | Attach file to chat input (without sending) |
 | `get_response` | Retrieve last assistant response |
+| `get_full_response` | Get full response with scrolling for long content |
+| `get_full_conversation` | Get entire conversation history |
 | `list_conversations` | List conversations within a project |
 | `open_conversation` | Open specific conversation |
+| `dismiss_notifications` | Dismiss notification banners |
 
-### Project Management Tools
+### Artifact Tools
 | Tool | Description |
 |------|-------------|
-| `list_projects` | List all projects |
-| `open_project` | Open project, return current state |
-| `create_project` | Create new project |
-| `delete_project` | Delete project (requires confirmation) |
+| `add_artifact_to_project` | Add most recent artifact to project knowledge |
+| `list_artifacts` | List artifacts created in current conversation |
 
-### Debug Tools
+### Context Sync Tools
+| Tool | Description |
+|------|-------------|
+| `sync_context` | Sync working context to project knowledge (state, decisions, learnings) |
+| `ask_project` | Ask project Claude a question using project knowledge and memory |
+
+### Local Directory Sync Tools
+| Tool | Description |
+|------|-------------|
+| `link_project` | Link a local directory to a Claude.ai project (creates `.claude-project.json`) |
+| `sync_status` | Check sync status between local directory and linked project |
+| `mark_synced` | Mark a file as synced after uploading to project knowledge |
+
+### Debug & UI Tools
 | Tool | Description |
 |------|-------------|
 | `take_screenshot` | Capture current browser state |
 | `validate_selectors` | Check if UI selectors still work |
 | `reload_selectors` | Reload selectors after editing |
+| `get_selectors` | Get current selectors configuration |
 | `get_page_info` | Get current page context |
+| `analyze_page` | Analyze current page state for debugging |
 | `close_browser` | Close browser instance |
+| `click_element` | Click element by selector path or CSS |
+| `get_element_html` | Get HTML of elements matching selector |
+| `scroll` | Scroll the page or specific element |
 
 ## Installation
 
 ### Prerequisites
-- Node.js 18+
+- Node.js 18+ (Node 20 LTS recommended)
 - Chrome browser
 
-### Setup
+### Option 1: Install from npm
+
+```bash
+npm install -g claude-project-mcp
+npx playwright install chromium
+```
+
+Add to your MCP client configuration (e.g., Claude Code's `~/.claude.json`):
+
+```json
+{
+  "mcpServers": {
+    "claude-project": {
+      "command": "claude-project-mcp"
+    }
+  }
+}
+```
+
+### Option 2: Install from source
 
 ```bash
 # Clone and install
-git clone <repo>
+git clone https://github.com/thoughtpunch/claude_project_mcp.git
 cd claude_project_mcp
 npm install
 npx playwright install chromium
 npm run build
-
-# Login to claude.ai (one-time)
-npm run inspect
-# Browser opens → login to claude.ai → press Enter to close
 ```
 
-### Configuration
-
-Add to your MCP client configuration (e.g., Claude Code's `~/.claude.json`):
+Add to your MCP client configuration:
 
 ```json
 {
@@ -113,6 +157,16 @@ Add to your MCP client configuration (e.g., Claude Code's `~/.claude.json`):
   }
 }
 ```
+
+### First-time Login
+
+```bash
+# Login to claude.ai (one-time setup)
+npm run inspect  # or: npx claude-project-mcp-inspect (if installed globally)
+# Browser opens → login to claude.ai → press Enter to close
+```
+
+**Note:** Close Chrome before running. The MCP uses your Chrome profile for authentication.
 
 ## Usage Examples
 
@@ -152,6 +206,38 @@ send_message(
   message="Based on the uploaded documents, summarize the key themes"
 )
 → Returns Claude's response (informed by project memory + files)
+```
+
+### Link Local Directory to Project
+```
+# Link your current working directory to a Claude.ai project
+link_project(project="My Research Project")
+→ Creates .claude-project.json manifest in current directory
+
+# Check what files need syncing
+sync_status()
+→ Returns: { linked: true, project: "...", local_files: [...], remote_files: [...] }
+
+# After uploading a file, mark it as synced
+upload_file(project="My Research Project", file_path="./notes.md")
+mark_synced(file_name="notes.md")
+```
+
+### Sync Working Context
+```
+# Persist your current working state to project knowledge
+sync_context(
+  project="My Research Project",
+  context="Working on auth refactor. Decided to use JWT. Blocked on rate limiting."
+)
+→ Creates/updates context file in project knowledge
+
+# Ask project Claude for guidance based on accumulated context
+ask_project(
+  project="My Research Project",
+  question="What was our decision on the auth approach?"
+)
+→ Returns answer informed by project memory and knowledge files
 ```
 
 ## Debugging

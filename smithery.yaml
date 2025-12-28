@@ -1,6 +1,6 @@
-name: claude-project-mcp
+name: claude_project_mcp
 description: MCP server for Claude.ai Projects via browser automation
-version: 1.0.0
+version: 1.0.3
 license: MIT
 repository: https://github.com/thoughtpunch/claude_project_mcp
 

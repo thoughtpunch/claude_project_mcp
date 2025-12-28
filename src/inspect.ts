@@ -15,7 +15,7 @@ import * as readline from 'readline';
 import path from 'path';
 import os from 'os';
 
-const DEFAULT_USER_DATA_DIR = path.join(os.homedir(), '.claude-project-mcp', 'chrome-profile');
+const DEFAULT_USER_DATA_DIR = path.join(os.homedir(), '.claude_project_mcp', 'chrome-profile');
 
 async function main() {
   console.log('Claude Project MCP - Interactive Inspector\n');

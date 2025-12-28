@@ -8,7 +8,7 @@ import path from 'path';
 import os from 'os';
 import { writeFileSync, mkdirSync, existsSync } from 'fs';
 
-const DEFAULT_USER_DATA_DIR = path.join(os.homedir(), '.claude-project-mcp', 'chrome-profile');
+const DEFAULT_USER_DATA_DIR = path.join(os.homedir(), '.claude_project_mcp', 'chrome-profile');
 const OUTPUT_DIR = path.join(process.cwd(), 'scraped');
 
 // Use one of your actual project IDs

@@ -10,7 +10,7 @@ export interface BrowserConfig {
   timeout?: number;
 }
 
-const DEFAULT_USER_DATA_DIR = path.join(os.homedir(), '.claude-project-mcp', 'chrome-profile');
+const DEFAULT_USER_DATA_DIR = path.join(os.homedir(), '.claude_project_mcp', 'chrome-profile');
 
 // Singleton browser instance
 let browserContext: BrowserContext | null = null;

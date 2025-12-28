@@ -12,8 +12,8 @@ import { closeBrowser } from './browser.js';
 
 const server = new Server(
   {
-    name: 'claude-project-mcp',
-    version: '1.0.0',
+    name: 'claude_project_mcp',
+    version: '1.0.3',
   },
   {
     capabilities: {

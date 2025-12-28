@@ -9,7 +9,7 @@ screenshots/
 scraped/
 
 # Chrome profile (contains session data)
-.claude-project-mcp/
+.claude_project_mcp/
 
 # Local project link manifest
 .claude-project.json

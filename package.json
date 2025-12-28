@@ -2,7 +2,7 @@
   "name": "claude-project-mcp",
   "version": "1.0.0",
   "mcpName": "io.github.thoughtpunch/claude-project-mcp",
-  "description": "MCP server to interact with Claude.ai Projects via browser automation - access project memory, knowledge files, and chat with full project context",
+  "description": "MCP server for Claude.ai Projects - access memory, knowledge files, and chat",
   "type": "module",
   "main": "dist/server.js",
   "bin": {

@@ -1,0 +1,16 @@
+name: claude-project-mcp
+description: MCP server for Claude.ai Projects via browser automation
+version: 1.0.0
+license: MIT
+repository: https://github.com/thoughtpunch/claude_project_mcp
+
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties: {}
+  commandFunction: |-
+    (config) => ({ command: 'node', args: ['dist/server.js'] })
+
+build:
+  dockerfile: false
